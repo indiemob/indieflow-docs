@@ -1,0 +1,88 @@
+---
+title: Webhook
+description: 'Callback after submitting a flow execution'
+icon: 'webhook'
+---
+Webhook will make a POST call to the endpoint you specified
+
+## Webhook request body example
+
+```json
+{
+  "payload": {
+    "data": {
+      "foo": "bar" // optional data passed
+    },
+    "context": {
+      "flow_id": "my_awesome_flow_identifier",
+      "flow_name": "my_awesome_flow",
+      "step_name": "step_b",
+      "request_id": "mqr_4b81ae2d5613446e9e21d76ba2ce26fc",
+      "triggered_by": {
+        "step_name": "step_a",
+        "step_execution_id": "ste_edf275e1e6e54212aa10662b05719d7a"
+      },
+      "dependencies_context": {
+        "step_a": {
+          "data": null,
+          "exit_code": "success"
+        }
+      }
+    }
+  },
+  "signature": "8d63956cc6672bb644a026d081610054c6047550ce49cc230d90cbfd43409b25"
+}
+```
+
+# Server implementation example
+
+```javascript
+import express from 'express'
+import { createHash } from 'crypto'
+
+const SIGNATURE_KEY = 'wsk_upsjOIYYLME2zLPaiDDe9BpXP2ZS8xnw' // Load this from your config
+const STEPS = {
+  step_a (payload) {
+    return { exit_code: 'success' }
+  },
+  step_b (payload) {
+    return { exit_code: 'success' }
+  },
+  step_c (payload) {
+    return { exit_code: 'success', data: { myOutput: 'myValue' } } // Optionally return data
+  }
+}
+
+function stepFactory (stepName) {
+  return STEPS[stepName] || (_) => {}
+}
+
+function validateRequest(payload, signature) {
+  const message = `${JSON.stringify(payload)}${SIGNATURE_KEY}`
+  const hash = createHash('sha256').update(message, 'utf-8').digest('hex').toString('hex')
+  return hash == signature
+}
+
+const app = express()
+app.use(express.json())
+
+// Webhook URL
+app.post('/hook', async (req, res) => {
+  const body = req.body
+  const { payload, signature } = body
+
+  if (!validateRequest(payload, signature)) {
+    res.status(400).json({ error: 'Invalid input request, please verify the signature' })
+    return
+  }
+
+  const { context } = payload
+  const step = stepFactory(context.step_name)
+
+  return res.json(step(payload))
+})
+
+app.listen(3000, () => {
+  console.log(`Example app listening on port 3000`)
+})
+```

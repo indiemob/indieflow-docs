@@ -1,0 +1,1104 @@
+openapi: 3.0.0
+info:
+  license:
+    name: PRIVATE
+    url: https://indieflow.app
+  title: indieflow
+  description: |
+    Asynchronous step-based task flow API.
+
+    Create automated workflows that will react to the output of your API responses through webhooks,
+    allowing you to design behind-the-scenes processes both in parallel and in pipeline.
+
+    <img src="https://raw.githubusercontent.com/indiemob/indieflow-spec/master/diagram.gif" width="800" />
+
+
+    ## Quickstart
+
+    * **Flow definition example (copy and paste this json body to create this example flow definition) <a href="#/default/flow_definition_post">Here</a>**
+
+    ```json
+    {
+      "name": "foo_request_signature",
+      "webhook": {
+        "url": "https://mysite.com/hook" // change this to your url
+      },
+      "steps": {
+        "foo_request_submitted": {
+          "triggers": {
+            "success": [
+              "email_notify_parties"
+            ]
+          }
+        },
+        "email_notify_parties": null,
+        "party_a_signs": {
+          "depends_on": {
+            "email_notify_parties": "success"
+          },
+          "triggers": {
+            "success": [
+              "send_signed_email_confirmation"
+            ]
+          }
+        },
+        "party_b_signs": {
+          "depends_on": {
+            "email_notify_parties": "success"
+          },
+          "triggers": {
+            "success": [
+              "send_signed_email_confirmation"
+            ]
+          }
+        },
+        "send_signed_email_confirmation": {
+          "depends_on": {
+            "party_a_signs": "success",
+            "party_b_signs": "success"
+          }
+        }
+      }
+    }
+    ```
+    * **Server implementation examples <a href="https://github.com/indiemob/indieflow-examples">here</a>**
+
+  version: 0.1.0
+servers:
+  - url: https://api.indieflow.app/v1
+    description: Production server
+# - url: https://api.dev.indieflow.app/v1
+#   description: Development server
+security:
+  - api_key: []
+paths:
+  /flow/definition:
+    get:
+      summary: Retrieve the flow definition list
+      description: Retrieve the flow definition list
+      tags:
+        - FlowDefinition
+      operationId: flow_definition_get
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Returns the list of flows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisteredFlowsResponse"
+        "400":
+          description: The form contains validation errors (status will be `validation_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+    post:
+      summary: Create a new flow definition
+      description: Create a new flow definition
+      tags:
+        - FlowDefinition
+      operationId: flow_definition_post
+      requestBody:
+        description: Information about the flow to be created
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowDefinition"
+        required: true
+      responses:
+        "200":
+          description:
+            "The flow was successfully created, returns the id of the flow\
+            \ record"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowDefinitionResponse"
+        "400":
+          description: The form contains validation errors (status will be `validation_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+  /flow/definition/{id}:
+    get:
+      summary: Retrieve the flow definition detail
+      description: Retrieve the flow definition detail
+      tags:
+        - FlowDefinition
+      operationId: flow_definition_id_get
+      parameters:
+        - name: id
+          in: path
+          description: The flow definition id or name
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The flow detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowDefinitionResponse"
+        "404":
+          description: The flow definition record was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+    delete:
+      summary: Delete an existing flow definition
+      description: Delete an existing flow definition
+      tags:
+        - FlowDefinition
+      operationId: flow_definition_id_delete
+      parameters:
+        - name: id
+          in: path
+          description: The flow definition id or name
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Basic success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SimpleResponse"
+        "404":
+          description: The flow definition record was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+    put:
+      summary: Update flow definition
+      description: |
+        Updates an existing flow definition, you can just pass the root attributes you wish to update and it wont affect the existing values.
+
+        NOTE: For updating steps you need to send the whole object with the changes you want to make because that will get overwritten.
+      tags:
+        - FlowDefinition
+      operationId: flow_definition_id_put
+      parameters:
+        - name: id
+          in: path
+          description: The flow definition id or name
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      requestBody:
+        description: Information about the flow to be updated
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowDefinition"
+        required: true
+      responses:
+        "200":
+          description: The flow detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowDefinitionResponse"
+        "404":
+          description: The flow definition record was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+  /flow/submit:
+    post:
+      summary: Submits a flow execution
+      description: |
+        Submits a flow execution, this starts the whole flow process by calling the declared steps and
+        performs the desired operations as originally designed
+      tags:
+        - FlowExecution
+      operationId: flow_submit_post
+      requestBody:
+        description: Information about the flow to be created
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlowSubmissionRequest"
+        required: true
+      responses:
+        "200":
+          description:
+            "The flow was successfully created, returns the id of the flow\
+            \ record"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowSubmissionResponse"
+        "400":
+          description: The form contains validation errors (status will be `validation_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+      callbacks:
+        step_execution:
+          "https://mysite.com/hooks/indieflow":
+            post:
+              summary: Step execution webhook
+              description: >
+                This webhook is called when a step execution is in progress.
+
+
+                **This is the meat of indieflow, here you implement your step logic and return the outcome that will be used as a decision to execute subsecuent steps**
+
+
+                NOTE: `https://mysite.com/hooks/indieflow` is a just a placeholder
+                for whatever webhook url you set when creating/updating the flow definition
+
+
+                **Signature verification:**
+                In order to verify the signature comes from the right origin, you need to do the following steps:
+
+                * Create an object containing `context` and `data` and convert it to a json string
+                * SHA256 hexdigest the json string alongside the `signature_key`
+                * The result should match the incoming `signature`
+
+
+                **Example:**
+
+
+                ```ruby
+
+                require 'json'
+
+                require 'digest'
+
+                body = JSON.parse(request.body.read)
+
+                payload = body['payload']
+                built_signature = Digest::SHA256.hexdigest("#{payload.to_json}#{signature_key}")
+                built_signature == body['signature'] # if equal, incoming request is trustworthy
+
+                ```
+              requestBody:
+                description: Information about the webhook payload
+                content:
+                  application/json:
+                    schema:
+                      $ref: "#/components/schemas/StepExecutionWebhookBody"
+              responses:
+                "200":
+                  description: The webhook expected result
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/StepExecutionResult"
+                "400":
+                  description: This result depends on the users webhook response
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/AnyData"
+
+  /dead_letter:
+    get:
+      summary: Retrieve the steps that failed to execute
+      description: |
+        Retrieves the dead letter message records
+
+        **WARNING: Records get deleted after 3 natural months to save space**
+      tags:
+        - DeadLetter
+      operationId: dead_letter_get
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Returns the list of failed steps
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetDeadLetterRecordsResponse"
+        "400":
+          description: The form contains validation errors (status will be `validation_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+    # delete:
+    #   summary: Deletes ALL the steps from the dead letter
+    #   description: |
+    #     Deletes ALL the steps from the dead letter.
+
+    #     **WARNING: once deleted, you will NOT be able to get these records back**
+    #   operationId: dead_letter_delete
+    #   responses:
+    #     "200":
+    #       description: Returns a simple response with the deleted step count
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: '#/components/schemas/DeadLetterAffectedRecordsResponse'
+    #     "500":
+    #       description: A generic error has occurred (status will be `generic_error`)
+    #       content:
+    #         application/json:
+    #           schema:
+    #             $ref: '#/components/schemas/ErrorResponse'
+    #   x-openapi-router-controller: "{{ controller_source }}"
+  /dead_letter/{id}:
+    post:
+      summary: Flushes (re-attempts) to run the given step from the dead letter
+      description: |
+        Re-attempts to run the given step from the dead letter.
+
+        NOTE: This will count as a submission request
+      tags:
+        - DeadLetter
+      operationId: dead_letter_id_post
+      parameters:
+        - name: id
+          in: path
+          description: The dead letter record id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Returns the reattempted dead letter record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeadLetterRecordResponse"
+        "404":
+          description: The dead letter record was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+    delete:
+      summary: Delete the dead letter record
+      description: |
+        Delete the given dead letter record
+      tags:
+        - DeadLetter
+      operationId: dead_letter_id_delete
+      parameters:
+        - name: id
+          in: path
+          description: The dead letter record id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Returns the deleted dead letter record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeadLetterRecordResponse"
+        "404":
+          description: The dead letter record was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+  /flow/execution/{id}/{flow_id}:
+    get:
+      summary: Retrieve the steps executed with this flow
+      description: |
+        Retrieve the steps executed with this flow
+
+        **WARNING: Records get deleted after 3 natural months to save space**
+      tags:
+        - FlowExecution
+      operationId: flow_execution_id_flow_id_get
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: id
+          in: path
+          description: The flow definition id or name
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+        - name: flow_id
+          in: path
+          description: The flow execution identifier
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of flow executions returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlowExecutionsResponse"
+        "400":
+          description: The form contains validation errors (status will be `validation_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+  /webhook/log:
+    get:
+      summary: Retrieve the detail of the webhook calls to your system
+      description: |
+        Retrieve the webhook call log records
+
+        **WARNING: Records get deleted after 3 natural months to save space**
+      tags:
+        - Logs
+      operationId: webhook_log_get
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: List of webhook request logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookRequestLogResponse"
+        "400":
+          description: The form contains validation errors (status will be `validation_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrorResponse"
+        "500":
+          description: A generic error has occurred (status will be `generic_error`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      x-openapi-router-controller: "{{ controller_source }}"
+components:
+  schemas:
+    AnyData:
+      description: Schema that represents any serializable data
+      oneOf:
+        - type: string
+        - type: object
+        - type: integer
+        - type: boolean
+    ResponseStatus:
+      type: string
+      description: |
+        The response status returned from the server, it can be:
+        * success: The request worked as expected
+        * error: The request returned an error
+      enum:
+        - success
+        - error
+    ResponseExitCode:
+      type: string
+      description: |
+        The response exit code returned from the server, it can be:
+        * success: The request worked as expected
+        * validation_error: The request contains an user input related error
+        * unauthorized: Invalid credentials
+        * generic_error: The request contains a generic error
+        * service_down: The backend server is down
+        * flow_disabled: The requested flow is currently marked as disabled
+        * service_plan_max_registered_flows_reached: The maximum number of registered flows has been reached, this error also applies when trying to submit a flow after downgrading a plan
+        * service_plan_max_steps_per_flow_reached: The maximum number of steps per flow has been exceeded, this error also applies when trying to submit a flow after downgrading a plan
+      enum:
+        - success
+        - validation_error
+        - unauthorized
+        - generic_error
+        - service_unavailable
+        - resource_not_found
+        - step_already_executed
+        - flow_disabled
+        - service_plan_max_registered_flows_reached
+        - service_plan_max_steps_per_flow_reached
+    StepExecutionExitCode:
+      type: string
+      description: |
+        Enum that indicates the possible exit codes a step execution might have:
+        * success: When a step execution worked as expected
+        * failed: When the user explicitly indicates the execution had a negative outcome
+        * noop: Short for NO-Operation, when a step execution executed but did nothing
+        * error: When a step execution executed with errors. This exit code will automatically send the message to the dead-letter in order to be reattempted at a later time.
+      enum:
+        - success
+        - failed
+        - noop
+        - error
+    FlowDefinitionStatus:
+      type: string
+      description: Indicates wether the flow is turned on or turned off
+      enum:
+        - active
+        - inactive
+    SimpleResponse:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ResponseStatus"
+        exit_code:
+          $ref: "#/components/schemas/ResponseExitCode"
+        data:
+          $ref: "#/components/schemas/AnyData"
+      description: A simple response representation
+    PaginatedData:
+      description: Base response object containing the record set and record count
+      type: object
+      properties:
+        record_count:
+          description: The number of records in the given context
+          type: integer
+        records:
+          description: The record set
+          type: array
+          items:
+            type: object
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          properties:
+            error:
+              type: string
+              description: Message describing the error
+          description: A response that shows the user that an error has occurred
+    ValidationErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            validation_errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+              description: Validation errors specific to the input
+          description: A response that shows the user any input validation errors
+    StepDefinition:
+      type: object
+      properties:
+        repeatable:
+          type: boolean
+          description:
+            Boolean flag to indicate that this step can be run multiple
+            times within the same flow
+          default: false
+        depends_on:
+          type: object
+          additionalProperties:
+            type: string
+          description: |
+            Indicates the required steps along with their respective exit codes that need to be met in order for this step to run. Example:
+            ```
+            # step_b depends on step_a being executed with a success exit code
+            # step_c depends on step_b being executed with a success OR noop exit code
+            # step_d depends on step_b and step_c being executed with a success exit code
+
+            step_a:
+               ...
+            step_b:
+              depends_on:
+                step_a: success
+            step_c:
+              depends_on:
+                step_b: success, noop
+            step_d:
+              depends_on:
+                step_b: success
+                step_c: success
+            ```
+        triggers:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: |
+            Indicates that after the execution of the step returing a certain exit code it will attempt to execute a following step. Example:
+            ```
+            # After step_a executes with an exit code of success it will attempt to execute step_b
+            # A request to execute step_b has been received, since the dependencies have been meet it will execute it
+            # If step_b executes with an exit code of success OR noop it will attempt to execute step_c
+
+            step_a:
+              triggers:
+                success:
+                  - step_b
+            step_b:
+              depends_on:
+                step_a: success
+              triggers:
+                success, noop:
+                  - step_c
+            step_c:
+            ```
+      description: The step definition
+      nullable: true
+    Webhook:
+      type: object
+      properties:
+        url:
+          type: string
+          description: "The webhook endpoint, must be https"
+        signature_key:
+          type: string
+          description: Key to ensure data authenticity (generated automatically)
+      description:
+        Contains information about the target endpoint that will be acting
+        as a webhook
+    StepExecutionWebhookBody:
+      type: object
+      properties:
+        payload:
+          $ref: "#/components/schemas/StepExecutionWebhookPayload"
+        signature:
+          type: string
+          description: >
+            The verification signature of the webhook call, in order to verify the signature comes from the right origin, you need to do the following steps:
+
+            * Create an object containing `context` and `data` and convert it to a json string
+            * SHA256 hexdigest the json string alongside the `signature_key`
+            * The result should match the incoming `signature`
+    StepExecutionWebhookPayload:
+      type: object
+      properties:
+        context:
+          $ref: "#/components/schemas/StepExecutionContext"
+        data:
+          type: object
+          additionalProperties: true
+          description: Additional information sent by the user
+      description: The payload that the webhook will be sending
+    FlowDefinitionRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The flow definition identifier
+        name:
+          type: string
+          description: |
+            The flow name, it must follow the following regexp:
+            `^[a-zA-Z_$][a-zA-Z_$0-9]*$`
+        description:
+          type: string
+          description: A brief description of what this flow is about
+        created_at:
+          type: integer
+          description: When was this flow created
+        updated_at:
+          type: integer
+          description: When was this flow updated
+        status:
+          $ref: "#/components/schemas/FlowDefinitionStatus"
+      description: Overall information of a registered flow
+    FlowDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The flow definition identifier
+        name:
+          description: |
+            The flow name, it must follow the following regexp:
+            `^[a-zA-Z_$][a-zA-Z_$0-9]*$`
+        description:
+          type: string
+          description: A brief description of what this flow is about
+        webhook:
+          $ref: "#/components/schemas/Webhook"
+        steps:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/StepDefinition"
+          description: |
+            Key-Value pair object that contains the steps that will consist on this workflow, the object Key must follow the following regexp: `^[a-zA-Z_$][a-zA-Z_$0-9]*$`
+
+            NOTE: If you want to define a step with no additional configuration you can just define the step name with a null value. Example:
+
+            ```
+            "steps": {
+              "step_with_no_attributes": null
+            }
+            ```
+        created_at:
+          type: integer
+          description: When was this flow created
+        updated_at:
+          type: integer
+          description: When was this flow updated
+        status:
+          $ref: "#/components/schemas/FlowDefinitionStatus"
+        current_version:
+          type: string
+          description: The version associated with this definition, this is only for traceability purposes, we do not support version rollbacks or anything like that
+      description: Contains the flow definition
+    StepExecutionContext:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: The execution request identifier
+        flow_id:
+          type: string
+          description: The workflow subject identifier
+        flow_name:
+          type: string
+          description: The workflow subject
+        step_name:
+          type: string
+          description: The step name belonging to the flow
+        dependencies_context:
+          description: If the current step has dependencies, their execution results will be included here
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/StepExecutionResult"
+        triggered_by:
+          $ref: "#/components/schemas/StepExecutionIdAndName"
+          description: |
+            If the current step was triggered by another step, it will be mentioned here,
+
+            NOTE: If the step has multiple dependencies and all of them attempt to trigger it, it will take the value
+            of the latest one, meaning when the message gets received, all the dependencies have been met.
+      description: Contains information about the context of the step execution
+    StepExecutionResult:
+      type: object
+      properties:
+        exit_code:
+          $ref: "#/components/schemas/StepExecutionExitCode"
+        data:
+          type: object
+          additionalProperties: true
+          description: "Output data (optional, size is limited to 1kb)"
+      description: The expected result of the step execution webhook call
+    FlowSubmissionRequest:
+      type: object
+      properties:
+        flow_name:
+          type: string
+          description: The name of the flow we want to run
+        flow_id:
+          type: string
+          description: The flow subject identifier
+        step_name:
+          type: string
+          description: The name of the flow step we want to run
+        data:
+          type: object
+          additionalProperties: true
+          description: |
+            Any additional data we want to send (size is limited to 1kb)
+
+            **WARNING: Avoid passing any sensitive data since its contents get stored**
+      description: The information about the flow that will get submitted
+      required:
+        - flow_name
+        - flow_id
+        - step_name
+    FlowSubmissionResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/FlowSubmissionRequest"
+            request_id:
+              type: string
+              description: The generated request id
+          description: The response of the flow submission request
+    DeadLetterRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The dead letter record identifier
+        context:
+          $ref: "#/components/schemas/StepExecutionContext"
+        error:
+          type: string
+          description:
+            Information about the issue that caused this step to end up
+            in dead letter
+        additional_info:
+          type: object
+          additionalProperties: true
+          description: Additional information
+      description: Overall view of a failed step execution that ended up in dead letter
+    HttpRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The request url
+        method:
+          type: string
+          description: The http method used
+        headers:
+          type: object
+          additionalProperties: true
+          description: The request headers
+        query_params:
+          type: object
+          additionalProperties: true
+          description: Query parameters
+        body:
+          type: object
+          additionalProperties: true
+          description: The request body
+      description: An object containing an http request
+    HttpResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: The response HTTP status
+        headers:
+          type: object
+          additionalProperties: true
+          description: The response headers
+        body:
+          type: object
+          additionalProperties: true
+          description: The response body
+      description: An object containing an http response
+    WebhookRequestLog:
+      type: object
+      properties:
+        step_execution:
+          $ref: "#/components/schemas/StepExecutionRecord"
+        request:
+          $ref: "#/components/schemas/HttpRequest"
+        response:
+          $ref: "#/components/schemas/HttpResponse"
+        created_at:
+          type: integer
+          description: The timestamp when was this request performed
+      description: Information about the webhook request for logging purposes
+    RegisteredFlowsResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          description: The record set of registered flows
+          properties:
+            data:
+              allOf:
+                - $ref: "#/components/schemas/PaginatedData"
+                - type: object
+                  properties:
+                    records:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/FlowDefinitionRecord"
+    FlowDefinitionResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/FlowDefinition"
+          description: Successful response after creating or retrieving a flow definition
+    GetDeadLetterRecordsResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          description: The record set of dead letter records
+          properties:
+            data:
+              allOf:
+                - $ref: "#/components/schemas/PaginatedData"
+                - type: object
+                  properties:
+                    records:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/DeadLetterRecord"
+    DeadLetterAffectedRecordsResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+    DeadLetterRecordResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          properties:
+            data:
+              $ref: "#/components/schemas/DeadLetterRecord"
+          description: The record set of registered flows
+    StepExecutionRecord:
+      description: Contains information about a flow step that already has been executed
+      type: object
+      properties:
+        id:
+          description: The step execution id
+          type: string
+        step_name:
+          description: The executed step name
+          type: string
+        exit_code:
+          $ref: "#/components/schemas/StepExecutionExitCode"
+        input:
+          type: object
+          additionalProperties: true
+          description: The additional data passed as an input to execute this step
+        output:
+          $ref: "#/components/schemas/AnyData"
+        error:
+          description: In case of an error, the error message will be displayed here
+          type: string
+        created_at:
+          description: Date when this step was executed
+          type: integer
+        flow_name:
+          description: The executed flow name
+        flow_id:
+          type: string
+          description: The id related to the flow execution
+        flow_definition_version:
+          type: string
+          description: The current version of the flow definition at the time of the execution, this is for traceability purposes
+    StepExecutionIdAndName:
+      description: Contains step execution id and name of the executed step
+      type: object
+      properties:
+        step_execution_id:
+          description: The step execution id
+          type: string
+        step_name:
+          description: The executed step name
+          type: string
+    FlowExecutionsResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          description: The record set of executions made in this flow
+          properties:
+            data:
+              allOf:
+                - $ref: "#/components/schemas/PaginatedData"
+                - type: object
+                  properties:
+                    records:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/StepExecutionRecord"
+    WebhookRequestLogResponse:
+      allOf:
+        - $ref: "#/components/schemas/SimpleResponse"
+        - type: object
+          description: The record set of webhook calls
+          properties:
+            data:
+              allOf:
+                - $ref: "#/components/schemas/PaginatedData"
+                - type: object
+                  properties:
+                    records:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/WebhookRequestLog"
+  parameters:
+    limit:
+      name: limit
+      in: query
+      description: Page size
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    offset:
+      name: offset
+      in: query
+      description: Page starting record
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 100
+        default: 0
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: X-Api-Key
+      in: header
+      description: |
+        The api key given to you when you register, no needed when using through <a href="https://rapidapi.com">RapidAPI</a>
+      x-apikeyInfoFunc: "{{ check_api_key_fn }}"

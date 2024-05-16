@@ -1,5 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema.json",
+  "openapi": "swagger.yaml",
   "name": "Starter Kit",
   "logo": {
     "dark": "/logo/dark.svg",
@@ -7,12 +8,12 @@
   },
   "favicon": "/favicon.svg",
   "colors": {
-    "primary": "#0D9373",
-    "light": "#07C983",
-    "dark": "#0D9373",
+    "primary": "#3498db",
+    "light": "#3498db",
+    "dark": "#3498db",
     "anchors": {
-      "from": "#0D9373",
-      "to": "#07C983"
+      "from": "#3498db",
+      "to": "#3498db"
     }
   },
   "topbarLinks": [
@@ -21,65 +22,51 @@
       "url": "mailto:hi@mintlify.com"
     }
   ],
-  "topbarCtaButton": {
-    "name": "Dashboard",
-    "url": "https://dashboard.mintlify.com"
-  },
-  "tabs": [
-    {
-      "name": "API Reference",
-      "url": "api-reference"
-    }
-  ],
   "anchors": [
     {
-      "name": "Documentation",
-      "icon": "book-open-cover",
+      "name": "Server Examples",
+      "icon": "github",
       "url": "https://mintlify.com/docs"
-    },
-    {
-      "name": "Community",
-      "icon": "slack",
-      "url": "https://mintlify.com/community"
-    },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://mintlify.com/blog"
     }
   ],
   "navigation": [
     {
       "group": "Get Started",
       "pages": [
-        "introduction",
-        "quickstart",
-        "development"
+        "index",
+        "quickstart"
       ]
     },
     {
-      "group": "Essentials",
+      "group": "FlowDefinition",
       "pages": [
-        "essentials/markdown",
-        "essentials/code",
-        "essentials/images",
-        "essentials/settings",
-        "essentials/navigation",
-        "essentials/reusable-snippets"
+        "flowdefinition/retrieve-the-flow-definition-list",
+        "flowdefinition/create-a-new-flow-definition",
+        "flowdefinition/retrieve-the-flow-definition-detail",
+        "flowdefinition/update-flow-definition",
+        "flowdefinition/delete-an-existing-flow-definition"
       ]
     },
     {
-      "group": "API Documentation",
+      "group": "FlowExecution",
       "pages": [
-        "api-reference/introduction"
+        "flowexecution/submits-a-flow-execution",
+        "flowexecution/webhook",
+        "flowexecution/retrieve-the-steps-executed-with-this-flow"
       ]
     },
     {
-      "group": "Endpoint Examples",
+      "group": "DeadLetter",
       "pages": [
-        "api-reference/endpoint/get",
-        "api-reference/endpoint/create",
-        "api-reference/endpoint/delete"
+        "deadletter/retrieve-the-steps-that-failed-to-execute",
+        "deadletter/flushes-re-attempts-to-run-the-given-step-from-the-dead-letter",
+        "deadletter/delete-the-dead-letter-record"
+      ]
+    },
+    {
+      "group": "Logs",
+      "pages": [
+        "logs/retrieve-the-detail-of-the-webhook-calls-to-your-system"
       ]
     }
   ],
