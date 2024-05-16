@@ -773,6 +773,7 @@ components:
           type: string
           description: The flow definition identifier
         name:
+          type: string
           description: |
             The flow name, it must follow the following regexp:
             `^[a-zA-Z_$][a-zA-Z_$0-9]*$`
