@@ -717,6 +717,7 @@ components:
         signature_key:
           type: string
           description: Key to ensure data authenticity (generated automatically)
+          readOnly: true
       description:
         Contains information about the target endpoint that will be acting
         as a webhook
@@ -772,6 +773,7 @@ components:
         id:
           type: string
           description: The flow definition identifier
+          readOnly: true
         name:
           type: string
           description: |
@@ -799,14 +801,18 @@ components:
         created_at:
           type: integer
           description: When was this flow created
+          readOnly: true
         updated_at:
           type: integer
           description: When was this flow updated
+          readOnly: true
         status:
           $ref: "#/components/schemas/FlowDefinitionStatus"
+          readOnly: true
         current_version:
           type: string
           description: The version associated with this definition, this is only for traceability purposes, we do not support version rollbacks or anything like that
+          readOnly: true
       description: Contains the flow definition
     StepExecutionContext:
       type: object
