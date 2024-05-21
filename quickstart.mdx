@@ -62,7 +62,8 @@ curl --request POST \
 ```
 
 In the response body the `webhook` object will contain a `signature_key` i.e. `wsk_upsjOIYYLME2zLPaiDDe9BpXP2ZS8xnw`, copy that value
-and in your webhook server code replace the value of `const SIGNATURE_KEY` with the new value
+and in your webhook server code replace the value of `const SIGNATURE_KEY` with the new value.
+Obviously for production you need to load that signature key from your configuration 🙂
 
 ## Submit a flow execution
 
