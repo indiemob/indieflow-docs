@@ -42,19 +42,14 @@ import { createHash } from 'crypto'
 
 const SIGNATURE_KEY = 'wsk_upsjOIYYLME2zLPaiDDe9BpXP2ZS8xnw' // Load this from your config
 const STEPS = {
-  step_a (payload) {
-    return { exit_code: 'success' }
-  },
-  step_b (payload) {
-    return { exit_code: 'success' }
-  },
-  step_c (payload) {
-    return { exit_code: 'success', data: { myOutput: 'myValue' } } // Optionally return data
-  }
+  step_a: (payload) => ({ exit_code: 'success' }),
+  step_a: (payload) => ({ exit_code: 'success' }),
+  step_c: (payload) => ({ exit_code: 'success', data: { myOutput: 'myValue' }}) // Return additional data optionally
 }
 
 function stepFactory (stepName) {
-  return STEPS[stepName] || (_) => {}
+  const defaultHandler = (_) => {}
+  return STEPS[stepName] || defaultHandler
 }
 
 function validateRequest(payload, signature) {
@@ -82,7 +77,5 @@ app.post('/hook', async (req, res) => {
   return res.json(step(payload))
 })
 
-app.listen(3000, () => {
-  console.log(`Example app listening on port 3000`)
-})
+app.listen(3000, () => console.log('Example app listening on port 3000'))
 ```

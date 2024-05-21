@@ -3,7 +3,20 @@ title: Quickstart
 description: 'Here is a starting point to test how indieflow works'
 ---
 
-First we create a flow definition
+
+## Webhook Server Setup
+
+First we clone the following webhook example: https://github.com/indiemob/indieflow-webhook-example
+
+After cloning the repo go to its folder, run `npm install` and `npm start`
+
+Install and setup <a href="https://ngrok.com" target="_blank">ngrok</a>, this will allow external access to your webhook server
+
+Then run `ngrok http 3000`, this will show in your console your webhook public address i.e. `https://0000-000-00-00-00.ngrok-free.app`
+
+## Create a flow definition
+
+The following command creates an example flow definition that we will tie to our webhook server
 
 ```sh
 curl --request POST \
@@ -14,7 +27,7 @@ curl --request POST \
   "name": "my_awesome_flow",
   "description": "A description of what my awesome flow is about",
   "webhook": {
-    "url": "https://my-awesome-api.io/hook"
+    "url": "https://0000-000-00-00-00.ngrok-free.app/hook"
   },
   "steps": {
     "step_a": {
@@ -47,6 +60,8 @@ curl --request POST \
   }
 }'
 ```
+
+## Submit a flow execution
 
 Then we submit a flow execution, starting with step_a
 
